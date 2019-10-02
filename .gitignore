@@ -1,3 +1,7 @@
+# Custom script files
+launch_borgy.sh
+make_docker.sh
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
