@@ -17,6 +17,7 @@ import copy
 import uuid
 import os
 import json
+import time
 import shutil
 import sys
 import nltk
@@ -198,10 +199,11 @@ class Clutrr:
             test_dfs.append(test_df[test_df.task_name == 'task_'+test_task])
 
         base_path = os.path.abspath(os.pardir)
-        # derive folder name as a random selection of characters
+
+        # derive folder name from time.time() and args.data_name
         directory = ''
         while True:
-            folder_name = 'data_{}'.format(str(uuid.uuid4())[:8])
+            folder_name = 'data_{}_{}'.format(str(time.time()), args.data_name)
             directory = os.path.join(base_path, args.output_dir, folder_name)
             if not os.path.exists(directory):
                 os.makedirs(directory)

@@ -214,6 +214,7 @@ def test_run(args):
     pid = random.choice(list(rb.puzzles.keys()))
     print(rb.puzzles[pid])
 
+
 def main(args):
     store = Store(args)
     header, rows = generate_rows(args, store)
@@ -224,6 +225,7 @@ def main(args):
     test_df = df[~msk]
     train_df.to_csv(args.output + '_train.csv')
     test_df.to_csv(args.output + '_test.csv')
+
 
 if __name__ == '__main__':
     args = get_args()
