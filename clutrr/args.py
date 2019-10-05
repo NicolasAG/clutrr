@@ -20,7 +20,7 @@ def get_args(command=None):
     parser.add_argument("--max_child", default=4, type=int, help="max number of children per node")
     parser.add_argument("--p_marry", default=1.0, type=float, help="Probability of marriage among nodes")
     # story parameters
-    parser.add_argument("--boundary",default=True, action='store_true', help='Boundary in entities')
+    parser.add_argument("--boundary", default=True, action='store_true', help='Boundary in entities')
     parser.add_argument("--output", default="gen_m3", type=str, help='Prefix of the output file')
     # Arguments not used now, use `--train_tasks` to set the task type and relation length
     # parser.add_argument("--relation_length", default=3, type=int, help="Max relation path length")
@@ -48,9 +48,9 @@ def get_args(command=None):
     parser.add_argument("--question", default=0, type=int, help='Question type. 0 -> relational, 1 -> yes/no')
     # others
     # parser.add_argument("--min_distractor_relations", default=8, type=int, help="Distractor relations about entities")
-    parser.add_argument("-v","--verbose", default=False, action='store_true',
+    parser.add_argument("-v", "--verbose", default=False, action='store_true',
                         help='print the paths')
-    parser.add_argument("-t","--test_split", default=0.2, help="Testing split")
+    parser.add_argument("-t", "--test_split", default=0.2, help="Testing split")
     parser.add_argument("--equal", default=False, action='store_true',
                         help="Make sure each pattern is equal. Warning: Time complexity of generation increases if this flag is set.")
     parser.add_argument("--analyze", default=False, action='store_true', help="Analyze generated files")

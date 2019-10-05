@@ -1,3 +1,4 @@
+#!/bin/sh
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
 #
@@ -5,7 +6,6 @@
 # LICENSE file in the root directory of this source tree.
 #
 
-#!/bin/sh
 
 export CLUTRR_OUTPUT_DIR=data_emnlp_only_holdout
 
