@@ -200,6 +200,7 @@ def generate_rows(args, store, task_name, split=0.8, prev_patterns=None):
         query_templator = templator_class(templates=query_templates, family=puzzle.anc.family_data)
         query_text = puzzle.generate_text(stype='query', combination_length=1, templator=query_templator)
         query_text = ' '.join(query_text)
+        query_text = query_text.replace('?.', '?')  # remove trailing '.'
 
         story_key_edges = puzzle.get_story_relations()
         puzzle.convert_node_ids(stype='story')
