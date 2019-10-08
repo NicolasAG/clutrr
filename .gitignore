@@ -1,5 +1,5 @@
 # Custom script files
-launch_borgy.sh
+generate_data.sh
 make_docker.sh
 
 # Byte-compiled / optimized / DLL files
