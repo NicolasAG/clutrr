@@ -205,7 +205,7 @@ class Clutrr:
         # derive folder name from time.time() and args.data_name
         directory = ''
         while True:
-            folder_name = 'data_{}_{}'.format(str(time.time()), args.data_name)
+            folder_name = 'data_{}_{}'.format(args.data_name, str(time.time()))
             directory = os.path.join(base_path, args.output_dir, folder_name)
             if not os.path.exists(directory):
                 os.makedirs(directory)
