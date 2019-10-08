@@ -60,7 +60,7 @@ class Clutrr:
         self.args = self._init_vars(args)
         # store the unique patterns for each relation here
         self.unique_patterns = {}
-        self.setup()
+        self.setup()  # download AMT placeholders and update self.args.template_file
 
     def generate(self, choice, args, num_rows=0, data_type='train', multi=False, split=None):
         """
@@ -84,8 +84,10 @@ class Clutrr:
             args = task_method(args)
             args.relation_length = int(relation_length)
             store = Store(args)
-            columns, rows, all_puzzles, train_patterns, test_patterns = generate_rows(args,
-                        store, task_name  + '.{}'.format(relation_length), split=split, prev_patterns=self.unique_patterns)
+            columns, rows, all_puzzles, train_patterns, test_patterns = generate_rows(
+                args, store, task_name + '.{}'.format(relation_length),
+                split=split, prev_patterns=self.unique_patterns
+            )
             self.unique_patterns[int(relation_length)] = {
                 'train': train_patterns,
                 'test': test_patterns
@@ -104,10 +106,10 @@ class Clutrr:
                 args = task_method(args)
                 args.relation_length = int(relation_length)
                 store = Store(args)
-                columns,r,pz = generate_rows(args, store, task_name + '.{}'.format(relation_length))
+                columns, r, pz = generate_rows(args, store, task_name + '.{}'.format(relation_length))
                 rows.extend(r)
                 puzzles.update(pz)
-            return ((columns, rows, puzzles), args)
+            return (columns, rows, puzzles), args
 
     def run_task(self):
         """
@@ -224,24 +226,29 @@ class Clutrr:
         if args.mturk:
             self.keep_unique(directory)
 
-
     def analyze_data(self, directory):
         """
         Analyze a given directory
         :param directory:
         :return:
         """
-        all_files = glob.glob(os.path.join(directory,'*.csv'))
+        all_files = glob.glob(os.path.join(directory, '*.csv'))
         for fl in all_files:
             logger.info("Analyzing file {}".format(fl))
             df = pd.read_csv(fl)
-            df['word_len'] = df.story.apply(lambda x: len(word_tokenize(x)))
-            df['word_len_clean'] = df.clean_story.apply(lambda x: len(word_tokenize(x)))
-            print("Max words : ", df.word_len.max())
-            print("Min words : ", df.word_len.min())
+            df['word_len'] = df.story_facts.apply(lambda x: len(word_tokenize(x)))
+            df['amt_word_len'] = df.amt_story.apply(lambda x: len(word_tokenize(x)))
+            df['word_len_clean'] = df.clean_story_facts.apply(lambda x: len(word_tokenize(x)))
+            df['amt_word_len_clean'] = df.clean_amt_story.apply(lambda x: len(word_tokenize(x)))
+            print("Max words (in facts): ", df.word_len.max())
+            print("Min words (in facts): ", df.word_len.min())
+            print("Max words (in amt rephrase): ", df.amt_word_len.max())
+            print("Min words (in amt rephrase): ", df.amt_word_len.min())
             print("For clean story : ")
-            print("Max words : ", df.word_len_clean.max())
-            print("Min words : ", df.word_len_clean.min())
+            print("Max words (in facts): ", df.word_len_clean.max())
+            print("Min words (in facts): ", df.word_len_clean.min())
+            print("Max words (in amt rephrase): ", df.amt_word_len_clean.max())
+            print("Min words (in amt rephrase): ", df.amt_word_len_clean.min())
         logger.info("Analysis complete")
 
     def keep_unique(self, directory, num=1):
@@ -262,20 +269,18 @@ class Clutrr:
             udf = pd.concat(udf)
             udf.to_csv(fl)
 
-
-
     def _init_vars(self, args):
-        args.noise_support = False
-        args.noise_irrelevant = False
-        args.noise_disconnected = False
-        args.noise_attributes = False
-        args.memory = 0
+        # Define initial default setup
+        args.noise_support = False       # supporting facts noise
+        args.noise_irrelevant = False    # irrelevant facts noise
+        args.noise_disconnected = False  # disconnected facts noise type
+        args.noise_attributes = False    # entity attributes noise
+        args.memory = 0  # memory task
         return args
 
     def task_1(self, args):
         """
         Basic family relation without any noise
-        :return:
         """
         args.output += '_task1'
         return args
@@ -283,7 +288,6 @@ class Clutrr:
     def task_2(self, args):
         """
         Family relation with supporting facts
-        :return:
         """
         args.noise_support = True
         args.output += '_task2'
@@ -292,7 +296,6 @@ class Clutrr:
     def task_3(self, args):
         """
         Family relation with irrelevant facts
-        :return:
         """
         args.noise_irrelevant = True
         args.output += '_task3'
@@ -301,7 +304,6 @@ class Clutrr:
     def task_4(self, args):
         """
         Family relation with disconnected facts
-        :return:
         """
         args.noise_disconnected = True
         args.output += '_task4'
@@ -310,7 +312,6 @@ class Clutrr:
     def task_5(self, args):
         """
         Family relation with all facts
-        :return:
         """
         args.noise_support = True
         args.noise_disconnected = True
@@ -321,8 +322,6 @@ class Clutrr:
     def task_6(self, args):
         """
         Family relation with only memory retrieval
-        :param args:
-        :return:
         """
         args.memory = 1.0
         args.output += '_task6'
@@ -331,9 +330,10 @@ class Clutrr:
     def task_7(self, args):
         """
         Family relation with mixed memory and reasoning
-        :param args:
-        :return:
         """
+        args.noise_support = True
+        args.noise_disconnected = True
+        args.noise_disconnected = True
         args.memory = 0.5
         args.output += '_task7'
         return args
@@ -341,7 +341,6 @@ class Clutrr:
     def setup(self):
         """
         Download placeholders and update args
-        :return:
         """
         placeholder_zip = "cleaned_placeholders.zip"
         placeholder_url = download_url + placeholder_zip

@@ -17,6 +17,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 class Fact:
     """
     Fact class to store the additional facts
@@ -42,7 +43,7 @@ class Puzzle:
     Puzzle class containing the logic to build and maintain the state of a single puzzle
     """
     def __init__(self,
-                 id = None,
+                 id=None,
                  target_edge=None,
                  story=None,
                  proof=None,
@@ -92,7 +93,7 @@ class Puzzle:
         self.query_text = self.format_edge(self.target_edge)
         self.target_edge_rel = self.get_edge_relation(self.target_edge)
         self.story_rel = [self.format_edge_rel(story) for story in self.story]
-        self.relation_comb =  '-'.join([self.get_edge_rel(x)['rel'] for x in self.story])
+        self.relation_comb = '-'.join([self.get_edge_rel(x)['rel'] for x in self.story])
 
     def add_fact(self, fact_type, fact):
         """
@@ -137,8 +138,7 @@ class Puzzle:
 
     def generate_text(self, stype='story', combination_length=1, templator:Templator=None, edges=None):
         """
-
-        :param stype: can be story or fact
+        :param stype: can be story, fact, target, or query
         :param combination_length: the max length of combining the edges for text replacement
         :param templator: templator class
         :param edges: if provided, use these edges instead of stypes
@@ -152,6 +152,10 @@ class Puzzle:
                 edges_to_convert = copy.copy([fact.fact_edges for fact in self.facts])
                 edges_to_convert = [y for x in edges_to_convert for y in x]
             elif stype == 'target':
+                # derive the relation (solution) from the target edge
+                edges_to_convert = [copy.copy(self.target_edge)]
+            elif stype == 'query':
+                # derive the question from the target edge
                 edges_to_convert = [copy.copy(self.target_edge)]
             else:
                 raise NotImplementedError("stype not implemented")
@@ -163,7 +167,7 @@ class Puzzle:
             r_combs = ['-'.join([self.get_edge_relation(edge) for edge in edge_group])
                        for edge_group in comb_group]
             # typo unfix for "neice niece"
-            r_combs = [r.replace('niece','neice') if 'niece' in r else r for r in r_combs ]
+            r_combs = [r.replace('niece', 'neice') if 'niece' in r else r for r in r_combs ]
             r_entities = [[ent for edge in edge_group for ent in edge] for edge_group
                           in comb_group]
             prows = [templator.replace_template(edge_group, r_entities[group_id])
@@ -172,7 +176,6 @@ class Puzzle:
             prc = [x for x in prows if x is not None]
             if len(prc) == len(prows):
                 generated_rows.append(prows)
-
 
         # select the generated row such that the priority of
         # complex decomposition is higher. sort by length and choose the min
