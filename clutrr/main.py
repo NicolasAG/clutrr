@@ -18,6 +18,7 @@ import uuid
 import os
 import json
 import time
+import random
 import shutil
 import sys
 import nltk
@@ -168,19 +169,32 @@ class Clutrr:
         train_tasks = args.train_tasks.split(',')
         all_puzzles = {}
         train_df = []
+        valid_df = []  # made from train rows (~10%)
         test_df = []
         for i, td in enumerate(train_data):
             train_rows_puzzles, train_args = td
             assert len(train_rows_puzzles) == 3
             train_rows, train_puzzles = train_rows_puzzles[:-1], train_rows_puzzles[-1]
-            trdfs = [r for r in train_rows[1] if r[-1] == 'train']
-            tsdfs = [r for r in train_rows[1] if r[-1] == 'test']
+            trdfs = []  # train dfs
+            vddfs = []  # valid dfs
+            tsdfs = []  # test dfs
+            for r in train_rows[1]:
+                if r[-1] == 'train':
+                    if random.random() < 0.9:  # 90% of the time, add to train set
+                        trdfs.append(r)
+                    else:                      # 10% of the time, add to valid set
+                        vddfs.append(r)
+                elif r[-1] == 'test':
+                    tsdfs.append(r)
             train_df.append(pd.DataFrame(columns=train_rows[0], data=trdfs))
+            valid_df.append(pd.DataFrame(columns=train_rows[0], data=vddfs))
             test_df.append(pd.DataFrame(columns=train_rows[0], data=tsdfs))
 
         train_df = pd.concat(train_df)
+        valid_df = pd.concat(valid_df)
         test_df = pd.concat(test_df)
         logger.info("Training rows : {}".format(len(train_df)))
+        logger.info("Validation rows : {}".format(len(valid_df)))
         logger.info("Testing rows : {}".format(len(test_df)))
 
         # prepare configs
@@ -195,7 +209,7 @@ class Clutrr:
         test_dfs = []
         for test_task in test_tasks:
             train_args.data_type = 'test'
-            test_fl_name = self.assign_name(train_args,test_task)
+            test_fl_name = self.assign_name(train_args, test_task)
             all_config['args'][test_fl_name] = vars(train_args)
             test_fl_names.append(test_fl_name)
             test_dfs.append(test_df[test_df.task_name == 'task_'+test_task])
@@ -210,16 +224,38 @@ class Clutrr:
             if not os.path.exists(directory):
                 os.makedirs(directory)
                 break
-        train_df.to_csv(os.path.join(directory, train_fl_name))
-        for i,test_fl_name in enumerate(test_fl_names):
+        # make a directory for training files
+        train_directory = os.path.join(directory, train_fl_name.replace('.csv', ''))
+        if not os.path.exists(train_directory):
+            os.makedirs(train_directory)
+        # save training file
+        train_df.to_csv(os.path.join(train_directory, train_fl_name))
+
+        # make a directory for validation files
+        valid_fl_name = train_fl_name.replace('train', 'valid')
+        valid_directory = os.path.join(directory, valid_fl_name.replace('.csv', ''))
+        if not os.path.exists(valid_directory):
+            os.makedirs(valid_directory)
+        # save training file
+        valid_df.to_csv(os.path.join(valid_directory, valid_fl_name))
+
+        for i, test_fl_name in enumerate(test_fl_names):
+            # make a directory for testing files
+            test_directory = os.path.join(directory, test_fl_name.replace('.csv', ''))
+            if not os.path.exists(test_directory):
+                os.makedirs(test_directory)
+            # save testing files
             test_df = test_dfs[i]
-            test_df.to_csv(os.path.join(directory, test_fl_name))
-        # dump config
-        json.dump(all_config, open(os.path.join(directory, 'config.json'),'w'))
+            test_df.to_csv(os.path.join(test_directory, test_fl_name))
+
+        # save config in root folder
+        json.dump(all_config, open(os.path.join(directory, 'config.json'), 'w'))
         if args.store_full_puzzles:
-            # dump all puzzles
-            pkl.dump(all_puzzles, open(os.path.join(directory, 'puzzles.pkl'),'wb'), protocol=-1)
-        shutil.make_archive(directory, 'zip', directory)
+            # save all puzzles in root folder
+            pkl.dump(all_puzzles, open(os.path.join(directory, 'puzzles.pkl'), 'wb'), protocol=-1)
+
+        # zip data folder
+        # shutil.make_archive(directory, 'zip', directory)
 
         logger.info("Created dataset in {}".format(directory))
         self.analyze_data(directory)
