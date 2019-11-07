@@ -48,6 +48,7 @@ def generate_rows(args, store, task_name, split=0.8, prev_patterns=None):
     else:
         amt_train_templates = json.load(open(args.template_file + '.json'))
         amt_test_templates = json.load(open(args.template_file + '.json'))
+
     # else:
     synthetic_templates_per_rel = {}
     for key, val in store.relations_store.items():
@@ -56,6 +57,7 @@ def generate_rows(args, store, task_name, split=0.8, prev_patterns=None):
     templator_class = TemplatorSynthetic
     train_templates = synthetic_templates_per_rel
     test_templates = synthetic_templates_per_rel
+
     # Build a mapping from any relation to a list of sentences for asking queries
     query_templates = copy.deepcopy(synthetic_templates_per_rel)
     for rel in query_templates.keys():
@@ -202,7 +204,7 @@ def generate_rows(args, store, task_name, split=0.8, prev_patterns=None):
         query_text = ' '.join(query_text)
         query_text = query_text.replace('?.', '?')  # remove trailing '.'
 
-        story_key_edges = puzzle.get_story_relations()
+        story_key_edges = puzzle.get_story_relations(stype='story') + puzzle.get_story_relations(stype='fact')
         puzzle.convert_node_ids(stype='story')
         puzzle.convert_node_ids(stype='fact')
         story_keys_changed_ids = puzzle.get_sorted_story_edges(stype='story') + puzzle.get_sorted_story_edges(stype='fact')

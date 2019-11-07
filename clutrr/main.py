@@ -350,7 +350,7 @@ class Clutrr:
         Family relation with all facts
         """
         args.noise_support = True
-        args.noise_disconnected = True
+        args.noise_irrelevant = True
         args.noise_disconnected = True
         args.output += '_task5'
         return args
@@ -368,7 +368,7 @@ class Clutrr:
         Family relation with mixed memory and reasoning
         """
         args.noise_support = True
-        args.noise_disconnected = True
+        args.noise_irrelevant = True
         args.noise_disconnected = True
         args.memory = 0.5
         args.output += '_task7'
