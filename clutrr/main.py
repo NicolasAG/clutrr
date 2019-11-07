@@ -313,7 +313,7 @@ class Clutrr:
         :return:
         """
         args.noise_support = True
-        args.noise_disconnected = True
+        args.noise_irrelevant = True
         args.noise_disconnected = True
         args.output += '_task5'
         return args
@@ -336,6 +336,9 @@ class Clutrr:
         """
         args.memory = 0.5
         args.output += '_task7'
+        args.noise_support = False
+        args.noise_disconnected = False
+        args.noise_disconnected = False
         return args
 
     def setup(self):
