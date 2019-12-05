@@ -11,14 +11,18 @@ child:
   male:
     rel: son
     p: [
+      e_2 is a son to e_1,
       e_2 is a son of e_1,
+      e_2 is the son of e_1,
       e_1 has a son called e_2,
       e_2 is e_1's son
     ]
   female:
     rel: daughter
     p: [
+      e_2 is a daughter to e_1,
       e_2 is a daughter of e_1,
+      e_2 is the daughter of e_1,
       e_1 has a daughter called e_2,
       e_2 is e_1's daughter
     ]
@@ -27,6 +31,8 @@ inv-child:
   male:
     rel: father
     p: [
+      e_2 is a father to e_1,
+      e_2 is a father of e_1,
       e_2 is the father of e_1,
       e_2 is e_1's father
     ]
@@ -37,6 +43,8 @@ inv-child:
   female:
     rel: mother
     p: [
+      e_2 is a mother to e_1,
+      e_2 is a mother of e_1,
       e_2 is the mother of e_1,
       e_2 is e_1's mother
     ]
@@ -49,6 +57,8 @@ SO:
   male:
     rel: husband
     p: [
+      e_2 is a husband to e_1,
+      e_2 is a husband of e_1,
       e_2 is the husband of e_1,
       The husband of e_1 is e_2,
       e_2 is e_1's husband
@@ -60,6 +70,8 @@ SO:
   female:
     rel: wife
     p: [
+      e_2 is a wife to e_1,
+      e_2 is a wife of e_1,
       e_2 is the wife of e_1,
       e_1 has a wife who is e_2,
       e_2 is e_1's wife
@@ -69,14 +81,18 @@ sibling:
   male:
     rel: brother
     p: [
+      e_2 is the brother of e_1,
       e_2 is a brother of e_1,
+      e_2 is a brother to e_1,
       e_1 has a brother named e_2,
       e_2 is e_1's brother
     ]
   female:
     rel: sister
     p: [
+      e_2 is the sister of e_1,
       e_2 is a sister of e_1,
+      e_2 is a sister to e_1,
       e_1 has a sister named e_2,
       e_2 is e_1's sister
     ]
@@ -85,6 +101,8 @@ grand:
   male:
     rel: grandson
     p: [
+      e_2 is a grandson to e_1,
+      e_2 is a grandson of e_1,
       e_2 is the grandson of e_1,
       e_1 has a grandson who is e_2,
       e_2 is e_1's grandson
@@ -92,6 +110,8 @@ grand:
   female:
     rel: granddaughter
     p: [
+      e_2 is a granddaughter to e_1,
+      e_2 is a granddaughter of e_1,
       e_2 is the granddaughter of e_1,
       e_1 has a granddaughter who is e_2,
       e_2 is e_1's granddaughter
@@ -101,12 +121,16 @@ inv-grand:
   male:
     rel: grandfather
     p: [
+      e_2 is a grandfather to e_1,
+      e_2 is a grandfather of e_1,
       e_2 is the grandfather of e_1,
       e_2 is e_1's grandfather
     ]
   female:
     rel: grandmother
     p: [
+      e_2 is a grandmother to e_1,
+      e_2 is a grandmother of e_1,
       e_2 is the grandmother of e_1,
       e_2 is e_1's grandmother
     ]
@@ -115,12 +139,16 @@ in-law:
   male:
     rel: son-in-law
     p: [
+      e_2 is a son-in-law to e_1,
+      e_2 is a son-in-law of e_1,
       e_2 is the son-in-law of e_1,
       e_1 has a son-in-law who is e_2
     ]
   female:
     rel: daughter-in-law
     p: [
+      e_2 is a daughter-in-law to e_1,
+      e_2 is a daughter-in-law of e_1,
       e_2 is the daughter-in-law of e_1,
       e_1 has a daughter-in-law who is e_2
     ]
@@ -129,12 +157,16 @@ inv-in-law:
   male:
     rel: father-in-law
     p: [
+      e_2 is a father-in-law to e_1,
+      e_2 is a father-in-law of e_1,
       e_2 is the father-in-law of e_1,
       e_2 is e_1's father-in-law
     ]
   female:
     rel: mother-in-law
     p: [
+      e_2 is a mother-in-law to e_1,
+      e_2 is a mother-in-law of e_1,
       e_2 is the mother-in-law of e_1,
       e_2 is e_1's mother-in-law
     ]
@@ -143,12 +175,16 @@ sibling-in-law :
   male:
     rel: brother-in-law
     p: [
+      e_2 is a brother-in-law to e_1,
+      e_2 is a brother-in-law of e_1,
       e_2 is the brother-in-law of e_1,
       e_2 is e_1's brother-in-law
     ]
   female:
     rel: sister-in-law
     p: [
+      e_2 is a sister-in-law to e_1,
+      e_2 is a sister-in-law of e_1,
       e_2 is the sister-in-law of e_1,
       e_2 is e_1's sister-in-law
     ]
@@ -157,12 +193,16 @@ un:
   male:
     rel: nephew
     p: [
+      e_2 is a nephew to e_1,
+      e_2 is a nephew of e_1,
       e_2 is the nephew of e_1,
       e_2 is e_1's nephew
     ]
   female:
-    rel: neice
+    rel: niece
     p: [
+      e_2 is a niece to e_1,
+      e_2 is a niece of e_1,
       e_2 is the niece of e_1,
       e_2 is e_1's niece
     ]
@@ -171,12 +211,16 @@ inv-un :
   male:
     rel: uncle
     p: [
+      e_2 is a uncle to e_1,
+      e_2 is a uncle of e_1,
       e_2 is the uncle of e_1,
       e_2 is e_1's uncle
     ]
   female:
     rel: aunt
     p: [
+      e_2 is a aunt to e_1,
+      e_2 is a aunt of e_1,
       e_2 is the aunt of e_1,
       e_2 is e_1's aunt
     ]
@@ -194,39 +238,3 @@ no-relation:
       e_1 has no-relation with e_2,
       e_2 has no-relation with e_1
     ]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
