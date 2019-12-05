@@ -167,7 +167,7 @@ class Puzzle:
             r_combs = ['-'.join([self.get_edge_relation(edge) for edge in edge_group])
                        for edge_group in comb_group]
             # typo unfix for "neice niece"
-            r_combs = [r.replace('niece', 'neice') if 'niece' in r else r for r in r_combs ]
+            # r_combs = [r.replace('niece', 'neice') if 'niece' in r else r for r in r_combs ]
             r_entities = [[ent for edge in edge_group for ent in edge] for edge_group
                           in comb_group]
             prows = [templator.replace_template(edge_group, r_entities[group_id])
