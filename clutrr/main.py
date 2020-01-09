@@ -72,7 +72,7 @@ class Clutrr:
         :param num_rows:
         :param data_type:
         :param multi:
-        :return:
+        :return: (columns, rows, all_puzzles), args
         """
         args = copy.deepcopy(args)
         args.num_rows = num_rows
@@ -151,7 +151,7 @@ class Clutrr:
             # TODO: free up some memory at the end of each task
 
             # Save the generated data
-            self.store_tmp(train_datas, choices_done)
+            self.store_tmp(train_datas[-1], choices_done[-1])
 
         # save all the datasets
         self.store(train_datas, None, args)
@@ -166,29 +166,44 @@ class Clutrr:
         :return: list of already generated datasets, list of already done choices
         """
         base_path = os.path.abspath(os.pardir)
-        file_name = f'data_{self.args.data_name}_tmp.pkl'
-        if os.path.isfile(os.path.join(base_path, self.args.output_dir, file_name)):
-            # load existing datasets
-            print(f"Loading existing datasets and choices...")
-            with open(os.path.join(base_path, self.args.output_dir, file_name), 'wb') as f:
-                generated_datasets, generated_choices = pkl.load(f)
-            print(f"choices: {generated_choices}")
-            return generated_datasets, generated_choices
-        else:
+        file_prefix = os.path.join(base_path, self.args.output_dir, f'data_{self.args.data_name}_[0-9].*.pkl')
+        file_list = glob.glob(file_prefix)
+
+        if len(file_list) == 0:
             print(f"No dataset or choices have been generated yet, start from scratch.")
             return [], []
 
-    def store_tmp(self, generated_datasets, choices):
+        print(f"Loading existing datasets and choices...")
+        datasets, choices = [], []
+        for file_name in file_list:
+            # load existing datasets
+            with open(file_name, 'rb') as f:
+                generated_data, generated_choice = pkl.load(f)
+            print(f"{generated_choice}")
+            datasets.append(generated_data)
+            choices.append(generated_choice)
+
+        return datasets, choices
+
+    def store_tmp(self, generated_dataset, choice):
         """
         Save the generated data with the corresponding choice into a pkl file
         :param generated_dataset: output of the self.generate() method
         :param choice: corresponding task of the generated data
         """
         base_path = os.path.abspath(os.pardir)
-        file_name = f'data_{self.args.data_name}_tmp.pkl'
-        print(f"Saving current datasets and choices ({choices})...")
+        file_name = f'data_{self.args.data_name}_{choice}.pkl'
+        # move previous file to avoid overriding and crash and lose everything
+        if os.path.isfile(os.path.join(base_path, self.args.output_dir, file_name)):
+            os.rename(os.path.join(base_path, self.args.output_dir, file_name),
+                      os.path.join(base_path, self.args.output_dir, file_name.replace('.pkl', '_old.pkl')))
+        # save
+        print(f"Saving current dataset and choice ({choice})...")
         with open(os.path.join(base_path, self.args.output_dir, file_name), 'wb') as f:
-            pkl.dump((generated_datasets, choices), f, pkl.HIGHEST_PROTOCOL)
+            pkl.dump((generated_dataset, choice), f, pkl.HIGHEST_PROTOCOL)
+        # delete old file if any
+        if os.path.isfile(os.path.join(base_path, self.args.output_dir, file_name.replace('.pkl', '_old.pkl'))):
+            os.remove(os.path.join(base_path, self.args.output_dir, file_name.replace('.pkl', '_old.pkl')))
 
     def assign_name(self, args, task_name):
         """
