@@ -132,7 +132,17 @@ class Clutrr:
                 all_choices.append(t)
 
         # load already generated datasets
-        train_datas, choices_done = self.load_generated()
+        tmp, choices_done = self.load_generated()
+        ######################################################################
+        process = psutil.Process(os.getpid())
+        mem = process.memory_info()[0] / float(2 ** 20)
+        print(f"{mem} MB used before cleanup")
+        del tmp
+        gc.collect()
+        process = psutil.Process(os.getpid())
+        mem = process.memory_info()[0] / float(2 ** 20)
+        print(f"{mem} MB used after cleanup")
+        ######################################################################
 
         for choice in all_choices:
             # ignore previously generated data
@@ -148,19 +158,29 @@ class Clutrr:
                 num_rows = test_rows
             print("Split : {}".format(choice_split))
 
-            train_datas.append(self.generate(choice, args, num_rows=num_rows, data_type='train', split=choice_split))
+            a_data = self.generate(choice, args, num_rows=num_rows, data_type='train', split=choice_split)
             choices_done.append(choice)
-            # TODO: free up some memory at the end of each task
 
             # Save the generated data
-            self.store_tmp(train_datas[-1], choices_done[-1])
+            self.store_tmp(a_data, choices_done[-1])
+
+            ######################################################################
+            process = psutil.Process(os.getpid())
+            mem = process.memory_info()[0] / float(2 ** 20)
+            print(f"{mem} MB used after saving")
+            # free some memory at the end of each task
+            del a_data
+            gc.collect()
+            process = psutil.Process(os.getpid())
+            mem = process.memory_info()[0] / float(2 ** 20)
+            print(f"{mem} MB used after saving and cleanup")
+            ######################################################################
+
+        # load all generated datasets
+        train_datas, _ = self.load_generated()
 
         # save all the datasets
         self.store(train_datas, None, args)
-        # delete temp file
-        base_path = os.path.abspath(os.pardir)
-        file_name = f'data_{args.data_name}_tmp.pkl'
-        os.remove(os.path.join(base_path, self.args.output_dir, file_name))
 
     def load_generated(self):
         """
@@ -283,7 +303,7 @@ class Clutrr:
         for i, td in enumerate(train_data):
             train_rows_puzzles, train_args = td
             assert len(train_rows_puzzles) == 3
-            train_rows, train_puzzles = train_rows_puzzles[:-1], train_rows_puzzles[-1]
+            train_rows = train_rows_puzzles[:-1]
             trdfs = []  # train dfs
             vddfs = []  # valid dfs
             tsdfs = []  # test dfs
