@@ -36,6 +36,7 @@ compositional:
       sibling: child
       inv-un: sibling
       inv-grand: inv-child
+      # inv-child: SO  # the parent of your child can also be yourself. Removed during generation due to cyclical issues.
     inv-child:
       child: sibling
       inv-child: inv-grand

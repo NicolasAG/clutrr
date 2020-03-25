@@ -7,3 +7,5 @@ networkx
 matplotlib
 nltk
 requests
+psutil
+sacremoses

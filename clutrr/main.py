@@ -16,6 +16,7 @@ import glob
 import copy
 import uuid
 import os
+import gc
 import json
 import time
 import random
@@ -27,6 +28,7 @@ import pickle as pkl
 import requests
 import hashlib
 import zipfile
+import psutil
 
 # check if nltk.punkt is installed
 try:
@@ -136,7 +138,6 @@ class Clutrr:
             # ignore previously generated data
             if choice in choices_done:
                 continue
-
             if choice in train_choices:
                 # split
                 choice_split = train_rows / (train_rows + test_rows)
@@ -146,6 +147,7 @@ class Clutrr:
                 choice_split = 0.0
                 num_rows = test_rows
             print("Split : {}".format(choice_split))
+
             train_datas.append(self.generate(choice, args, num_rows=num_rows, data_type='train', split=choice_split))
             choices_done.append(choice)
             # TODO: free up some memory at the end of each task
@@ -159,6 +161,51 @@ class Clutrr:
         base_path = os.path.abspath(os.pardir)
         file_name = f'data_{args.data_name}_tmp.pkl'
         os.remove(os.path.join(base_path, self.args.output_dir, file_name))
+
+    def load_generated(self):
+        """
+        Load the tmp pkl file if any, otherwise return empty arrays
+        :return: list of already generated datasets, list of already done choices
+        """
+        base_path = os.path.abspath(os.pardir)
+        file_prefix = os.path.join(base_path, self.args.output_dir, f'data_{self.args.data_name}_[0-9].*.pkl')
+        file_list = glob.glob(file_prefix)
+
+        if len(file_list) == 0:
+            print(f"No dataset or choices have been generated yet, start from scratch.")
+            return [], []
+
+        print(f"Loading existing datasets and choices...")
+        datasets, choices = [], []
+        for file_name in file_list:
+            # load existing datasets
+            with open(file_name, 'rb') as f:
+                generated_data, generated_choice = pkl.load(f)
+            print(f"{generated_choice}")
+            datasets.append(generated_data)
+            choices.append(generated_choice)
+
+        return datasets, choices
+
+    def store_tmp(self, generated_dataset, choice):
+        """
+        Save the generated data with the corresponding choice into a pkl file
+        :param generated_dataset: output of the self.generate() method
+        :param choice: corresponding task of the generated data
+        """
+        base_path = os.path.abspath(os.pardir)
+        file_name = f'data_{self.args.data_name}_{choice}.pkl'
+        # move previous file to avoid overriding and crash and lose everything
+        if os.path.isfile(os.path.join(base_path, self.args.output_dir, file_name)):
+            os.rename(os.path.join(base_path, self.args.output_dir, file_name),
+                      os.path.join(base_path, self.args.output_dir, file_name.replace('.pkl', '_old.pkl')))
+        # save
+        print(f"Saving current dataset and choice ({choice})...")
+        with open(os.path.join(base_path, self.args.output_dir, file_name), 'wb') as f:
+            pkl.dump((generated_dataset, choice), f, pkl.HIGHEST_PROTOCOL)
+        # delete old file if any
+        if os.path.isfile(os.path.join(base_path, self.args.output_dir, file_name.replace('.pkl', '_old.pkl'))):
+            os.remove(os.path.join(base_path, self.args.output_dir, file_name.replace('.pkl', '_old.pkl')))
 
     def load_generated(self):
         """
@@ -251,6 +298,11 @@ class Clutrr:
             train_df.append(pd.DataFrame(columns=train_rows[0], data=trdfs))
             valid_df.append(pd.DataFrame(columns=train_rows[0], data=vddfs))
             test_df.append(pd.DataFrame(columns=train_rows[0], data=tsdfs))
+
+            del tsdfs, vddfs, trdfs, train_rows, train_rows_puzzles
+            gc.collect()
+        del train_data
+        gc.collect()
 
         train_df = pd.concat(train_df)
         valid_df = pd.concat(valid_df)

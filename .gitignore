@@ -1,6 +1,20 @@
-# Custom script files
+# Custom files
 generate_data.sh
 make_docker.sh
+dummy_borgy.sh
+.dockerignore
+notes.txt
+
+# private files
+csv2txt.py
+csv2txt.sh
+split_by_relation_length.py
+split_by_relation_length.sh
+evaluate_generation.py
+evaluate_generation.sh
+
+cleaned_placeholders/
+clutrr/cleaned_placeholders/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
