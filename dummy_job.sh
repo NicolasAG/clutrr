@@ -23,7 +23,3 @@ eai job submit \
   --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
   --mem 12 \
   -- bash -c "while true; do sleep 60; done;"
-
-# --volume /mnt/datasets/public/nicolasg/clutrr:/clutrr \
-# --data $ORG_NAME.$ACCOUNT_NAME.clutrr1_valid:/data/clutrr/data/data_r0-facts_lALL_templatesplit_holdout_1581431566.9509876/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_valid \
-# --data $ORG_NAME.$ACCOUNT_NAME.clutrr1_test:/data/clutrr/data/data_r0-facts_lALL_templatesplit_holdout_1581431566.9509876 \
