@@ -5,8 +5,7 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("path", type=str, required=True,
-                        help="path to files to delete (separated by a ',')")
+    parser.add_argument("path", type=str, nargs='+', help="path to files to delete")
     args = parser.parse_args()
 
     print(f"deleting files and folders...")

@@ -23,3 +23,4 @@ eai job submit \
   --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
   --mem 12 \
   -- bash -c "while true; do sleep 60; done;"
+
