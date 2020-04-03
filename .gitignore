@@ -1,8 +1,8 @@
 # Custom files
-generate_data.sh
-make_docker.sh
-dummy_borgy.sh
-.dockerignore
+#generate_data.sh
+#make_docker.sh
+#dummy_job.sh
+#.dockerignore
 notes.txt
 
 # private files
