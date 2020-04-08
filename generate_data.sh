@@ -9,19 +9,19 @@ export ACCOUNT_ID=$ORG_NAME.$ACCOUNT_NAME
 
 echo "account id: $ACCOUNT_ID"
 
-echo "pushing all files to data clutrr_code ..."
+echo "pushing all files to code_clutrr ..."
 all_files=$(ls -I data -I .git -I . -I ..)  # ignore data, .git, current and parent folders
 for f in $all_files
 do
-  eai data push "clutrr_code" $f:$f
+  eai data push "code_clutrr" $f:$f
 done
 echo "done. now submitting jobs..."
 
 #echo "test : "
 #eai job submit \
 #  --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+#  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+#  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
 #  --cpu 2 \
 #  --mem 8 \
 #  -- bash -c "cd /clutrr/clutrr && python main.py --train_tasks 7.2,7.3,7.4 --test_tasks 7.2,7.3,7.4 --equal --data_name 'test' > out.txt 2>&1"
@@ -36,8 +36,8 @@ echo "done. now submitting jobs..."
 #echo "r3210-all+mem_l234 : "
 #eai job submit \
 #  --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+#  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+#  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
 #  --cpu 8 \
 #  --mem 90 \
 #  --name "r3210-all+mem_l234" \
@@ -45,8 +45,8 @@ echo "done. now submitting jobs..."
 #echo "r3210-all+mem_l234_templatesplit : "
 #eai job submit \
 #  --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+#  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+#  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
 #  --cpu 8 \
 #  --mem 90 \
 #  --name "r3210-all+mem_l234_templatesplit" \
@@ -55,8 +55,8 @@ echo "done. now submitting jobs..."
 #echo "r3210-all_l234 : "
 #eai job submit \
 #  --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+#  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+#  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
 #  --cpu 8 \
 #  --mem 90 \
 #  --name "r3210-all_l234" \
@@ -64,8 +64,8 @@ echo "done. now submitting jobs..."
 #echo "r3210-all_l234_templatesplit : "
 #eai job submit \
 #  --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+#  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+#  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
 #  --cpu 6 \
 #  --mem 90 \
 #  --name "r3210-all_l234_templatesplit" \
@@ -75,8 +75,8 @@ echo "done. now submitting jobs..."
 #echo "r0-facts_l234 : "
 #eai job submit \
 #  --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-#  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+#  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+#  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
 #  --cpu 4 \
 #  --mem 90 \
 #  --name "r0-facts_l234" \
@@ -85,8 +85,8 @@ echo "done. now submitting jobs..."
 echo "r0-facts_lALL_templatesplit_holdout : "
 eai job submit \
   --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
   --cpu 4 \
   --mem 300 \
   --restartable \
@@ -96,8 +96,8 @@ eai job submit \
 echo "r3210-all_lALL_templatesplit_holdout : "
 eai job submit \
   --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
-  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_data1:/data \
-  --data $ORG_NAME.$ACCOUNT_NAME.clutrr_code:/clutrr \
+  --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
+  --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
   --cpu 4 \
   --mem 300 \
   --restartable \
