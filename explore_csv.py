@@ -19,10 +19,8 @@ m1_tag = "MODE1"
 m2_tag = "MODE2"
 l_tag = "LENGTH"
 
-# train_files = f"/clutrr/data/data_r0-facts_lALL_templatesplit_1579036390.1541393/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_train/{m1_tag}_1.{l_tag}_train_{m2_tag}.txt"
-# test_files = f"/clutrr/data/data_r0-facts_lALL_templatesplit_1579036390.1541393/1.{l_tag}_test/{m1_tag}_1.{l_tag}_test_{m2_tag}.txt"
-train_files = f"/clutrr/data/data_r0-facts_lALL_templatesplit_holdout_1581431566.9509876/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_train/{m1_tag}_1.{l_tag}_train_{m2_tag}.txt"
-test_files = f"/clutrr/data/data_r0-facts_lALL_templatesplit_holdout_1581431566.9509876/1.{l_tag}_test/{m1_tag}_1.{l_tag}_test_{m2_tag}.txt"
+train_files = f"/data/1.2345678910_train/{m1_tag}_1.{l_tag}_train_{m2_tag}.txt"
+test_files = f"/data/1.{l_tag}_test/{m1_tag}_1.{l_tag}_test_{m2_tag}.txt"
 
 mode1 = ["no_proof", "short_proof", "long_proof"]
 mode2 = ["facts", "amt", "both"]
@@ -139,8 +137,8 @@ def get_data(df, lengths):
 def main2():
     print(f"Loading training proofs...")
 
-    # df = pd.read_csv("/clutrr/data/data_r0-facts_lALL_templatesplit_1579036390.1541393/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_train/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_train.csv")
-    df = pd.read_csv("/clutrr/data/data_r0-facts_lALL_templatesplit_holdout_1581431566.9509876/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_train/1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,1.10_train.csv")
+    # df = pd.read_csv("/data/1.2345678910_train/1.2345678910_train.csv")
+    df = pd.read_csv("/data/1.2345678910_train/1.2345678910_train.csv")
     print(f"#of lines: {len(df)}")
 
     train_combinations, train_proof_steps, train_proofs, train_statements = get_data(df, train_lengths)
@@ -152,8 +150,8 @@ def main2():
     for l in all_lengths:
         print("")
         print(f"Loading test proofs of length {l}...")
-        # df = pd.read_csv(f"/clutrr/data/data_r0-facts_lALL_templatesplit_1579036390.1541393/1.{l}_test/1.{l}_test.csv")
-        df = pd.read_csv(f"/clutrr/data/data_r0-facts_lALL_templatesplit_holdout_1581431566.9509876/1.{l}_test/1.{l}_test.csv")
+        # df = pd.read_csv(f"/data/1.{l}_test/1.{l}_test.csv")
+        df = pd.read_csv(f"/data/1.{l}_test/1.{l}_test.csv")
         print(f"#of lines: {len(df)}")
 
         test_combinations, test_proof_steps, test_proofs, test_statements = get_data(df, [l])
@@ -204,6 +202,20 @@ def main2():
 """
 
 
+def custom_add(dictionary, key, element):
+    try:
+        dictionary[key].add(element)
+    except KeyError:
+        dictionary[key] = {element}
+
+
+def size_of(dictionary, keys):
+    s = set()
+    for k in keys:
+        s.update(dictionary[k])
+    return len(s)
+
+
 def extract_entities_and_relation(line):
     line = line.replace(',', '').strip()
 
@@ -222,7 +234,7 @@ def extract_entities_and_relation(line):
 
     # extract who is e_1 and who is e_2
     e1, e2 = None, None
-    first_names = list(set([w for w in line.split() if w[0].isupper()]))
+    first_names = list(set([w for w in line.replace('The ', 'the ').split() if w[0].isupper()]))
     if len(first_names) != 2:
         print(f"line '{line}' does not have exactly 2 names: {first_names}")
         raise IndexError()
@@ -256,58 +268,82 @@ def extract_entities_and_relation(line):
     return rel, e1, e2
 
 
-def get_data(lines):
-    proofs = set([])  # set of entire proofs of the form "since <> and <> then <> . since <> and <> then <> . ..."
-    proof_steps = set([])  # set of unique proof steps of the form "since A r B and B r C then A r C ."
-    statements = set([])  # set of unique statement of the form "A r B"
-    first_names = set([])  # set of unique first names
-    relations = set([])  # set of unique relations
+def get_data(lines, source='proof'):
+    """
+    :param lines: array of example lines containing a story, question, proof and answer
+    :param source: where to look in the line to extract data (either 'proof' or 'story')
+    :return: mappings from unique proof|proof_steps|statements|first_names|relations to list of line ID with that
+    """
+    proofs = {}  # dict of entire proofs of the form "since <> and <> then <> . since <> and <> then <> . ..."
+    proof_steps = {}  # dict of unique proof steps of the form "since A r B and B r C then A r C ."
+    statements = {}  # dict of unique statement of the form "A r B"
+    first_names = {}  # dict of unique first names
+    relations = {}  # dict of unique relations
 
     for idx, line in enumerate(lines):
 
-        # Get the proof
-        proof_raw = line.split('<PROOF>')[1].split('<ANSWER>')[0].replace('Since ', 'since ')
-        proof_str = []
+        if source == 'proof':
+            # Get the proof
+            raw_info = line.split('<PROOF>')[1].split('<ANSWER>')[0].replace('Since ', 'since ')
+            proof_str = []
+        elif source == 'story':
+            # Get the story
+            raw_info = line.split('<STORY>')[1].split('<QUERY>')[0]
+            proof_str = ["none"]  # assume no proof if source = story
+        else:
+            raise ValueError(f"Invalid parameter {source}.")
 
-        for sent in proof_raw.split('.'):
+        for sent in raw_info.split('.'):
             if len(sent.strip()) == 0: continue
             try:
-                predicate1 = sent.split(' since ')[1].split(' and ')[0]
-                rel1, e11, e12 = extract_entities_and_relation(predicate1)
-                first_names.update([e11, e12])
-                relations.add(rel1)
-                predicate1 = f"{e12}-{rel1}-{e11}"
-                statements.add(predicate1)
+                if source == 'proof':
+                    predicate1 = sent.split(' since ')[1].split(' and ')[0]
+                    rel1, e11, e12 = extract_entities_and_relation(predicate1)
+                    custom_add(first_names, e11, idx)
+                    custom_add(first_names, e12, idx)
+                    custom_add(relations, rel1, idx)
+                    predicate1 = f"{e12}-{rel1}-{e11}"
+                    custom_add(statements, predicate1, idx)
 
-                predicate2 = sent.split(' and ')[1].split(' then ')[0]
-                rel2, e21, e22 = extract_entities_and_relation(predicate2)
-                first_names.update([e21, e22])
-                relations.add(rel2)
-                predicate2 = f"{e22}-{rel2}-{e21}"
-                statements.add(predicate2)
+                    predicate2 = sent.split(' and ')[1].split(' then ')[0]
+                    rel2, e21, e22 = extract_entities_and_relation(predicate2)
+                    custom_add(first_names, e21, idx)
+                    custom_add(first_names, e22, idx)
+                    custom_add(relations, rel2, idx)
+                    predicate2 = f"{e22}-{rel2}-{e21}"
+                    custom_add(statements, predicate2, idx)
 
-                conclusion = sent.split(' then ')[1]
-                rel3, e31, e32 = extract_entities_and_relation(conclusion)
-                first_names.update([e31, e32])
-                relations.add(rel3)
-                conclusion = f"{e32}-{rel3}-{e31}"
-                statements.add(conclusion)
+                    conclusion = sent.split(' then ')[1]
+                    rel3, e31, e32 = extract_entities_and_relation(conclusion)
+                    custom_add(first_names, e31, idx)
+                    custom_add(first_names, e32, idx)
+                    custom_add(relations, rel3, idx)
+                    conclusion = f"{e32}-{rel3}-{e31}"
+                    custom_add(statements, conclusion, idx)
+                else:
+                    e12, rel1, e11, e22, rel2, e21 = None, None, None, None, None, None
+                    rel3, e31, e32 = extract_entities_and_relation(sent.strip())
+                    custom_add(first_names, e31, idx)
+                    custom_add(first_names, e32, idx)
+                    custom_add(relations, rel3, idx)
+
             except IndexError as e:
                 print(f"INDEX ERROR ON THIS LINE: '{sent}'")
                 raise e
 
-            sent = f"{e12}-{rel1}-{e11} + {e22}-{rel2}-{e21} = {e32}-{rel3}-{e31}"
-            proof_steps.add(sent)
+            if source == 'proof':
+                sent = f"{e12}-{rel1}-{e11} + {e22}-{rel2}-{e21} = {e32}-{rel3}-{e31}"
+                custom_add(proof_steps, sent, idx)
+                proof_str.append(sent)  # add this step to the proof
 
-            proof_str.append(sent)  # add this step to the proof
         proof_str = '. '.join(proof_str)
-        proofs.add(proof_str)
+        custom_add(proofs, proof_str, idx)
 
-    return proof_steps, proofs, statements, first_names, relations
+    return proofs, proof_steps, statements, first_names, relations
 
 
 def main3():
-    m1 = "short_proof"
+    m1 = "no_proof"
     m2 = "facts"
 
     print(f"Loading training proofs")
@@ -319,9 +355,12 @@ def main3():
             train_lines.extend(f.readlines())
     print(f"number of train lines: {len(train_lines)}")
 
-    train_proof_steps, train_proofs, train_statements, train_first_names, train_relations = get_data(train_lines)
-    print(f"#of train proof steps: {len(train_proof_steps)}")
+    if m1 == 'no_proof':
+        train_proofs, train_proof_steps, train_statements, train_first_names, train_relations = get_data(train_lines, source='story')
+    else:
+        train_proofs, train_proof_steps, train_statements, train_first_names, train_relations = get_data(train_lines)
     print(f"#of train proofs: {len(train_proofs)}")
+    print(f"#of train proof steps: {len(train_proof_steps)}")
     print(f"#of train statements: {len(train_statements)}")
     print(f"#of train first names: {len(train_first_names)}")
     print(f"#of train relations: {len(train_relations)}")
@@ -330,16 +369,19 @@ def main3():
         print("")
         print(f"Loading test proofs of length {l}...")
         fn = test_files.replace(m1_tag, m1).replace(m2_tag, m2).replace(l_tag, l)
-        if os.path.isfile(fn.replace('.txt', '_EASY.txt')):
-            fn = fn.replace('.txt', '_EASY.txt')
-            print("-- EASY version --")
+        if os.path.isfile(fn.replace('.txt', '_PROPER.txt')):
+            fn = fn.replace('.txt', '_PROPER.txt')
+            print("-- PROPER version --")
         with open(fn, 'r') as f:
             test_lines = f.readlines()
         print(f"#of lines: {len(test_lines)}")
 
-        test_proof_steps, test_proofs, test_statements, test_first_names, test_relations = get_data(test_lines)
-        print(f"#of test proof steps: {len(test_proof_steps)}")
+        if m1 == 'no_proof':
+            test_proofs, test_proof_steps, test_statements, test_first_names, test_relations = get_data(test_lines, source='story')
+        else:
+            test_proofs, test_proof_steps, test_statements, test_first_names, test_relations = get_data(test_lines)
         print(f"#of test proofs: {len(test_proofs)}")
+        print(f"#of test proof steps: {len(test_proof_steps)}")
         print(f"#of test statements: {len(test_statements)}")
         print(f"#of test first names: {len(test_first_names)}")
         print(f"#of test relations: {len(test_relations)}")
@@ -348,46 +390,57 @@ def main3():
         #print("")
         #print(f"train - test proofs: {len(tmp)} = {100 * len(tmp) / len(train_proofs)}% of train proofs are unique")
         #if len(tmp) > 0: print(f"one of them: {list(tmp)[0]}")
-        tmp = test_proofs - train_proofs
+        tmp = test_proofs.keys() - train_proofs.keys()
         print("")
         print(f"test - train proofs: {len(tmp)} = {100 * len(tmp) / len(test_proofs)}% of test proofs are unique")
         if len(tmp) > 0: print(f"one of them: {list(tmp)[0]}")
+        s = size_of(test_proofs, tmp)
+        print(f"which represents {s} / {len(test_lines)} = {100 * s / len(test_lines)}% of test examples")
 
-        #tmp = train_proof_steps - test_proof_steps
-        #print("")
-        #print(f"train - test proof steps: {len(tmp)} = {100 * len(tmp) / len(train_proof_steps)}% of train proof steps are unique")
-        #print(f"few of them: {list(tmp)[:5]}")
-        tmp = test_proof_steps - train_proof_steps
-        print("")
-        print(f"test - train proof steps: {len(tmp)} = {100 * len(tmp) / len(test_proof_steps)}% of test proof steps are unique")
-        print(f"few of them: {list(tmp)[:5]}")
+        if m1 != 'no_proof':
+            #tmp = train_proof_steps - test_proof_steps
+            #print("")
+            #print(f"train - test proof steps: {len(tmp)} = {100 * len(tmp) / len(train_proof_steps)}% of train proof steps are unique")
+            #print(f"few of them: {list(tmp)[:5]}")
+            tmp = test_proof_steps.keys() - train_proof_steps.keys()
+            print("")
+            print(f"test - train proof steps: {len(tmp)} = {100 * len(tmp) / len(test_proof_steps)}% of test proof steps are unique")
+            print(f"few of them: {list(tmp)[:5]}")
+            s = size_of(test_proof_steps, tmp)
+            print(f"which represents {s} / {len(test_lines)} = {100 * s / len(test_lines)}% of test examples")
 
-        #tmp = train_statements - test_statements
-        #print("")
-        #print(f"train - test statements: {len(tmp)} = {100 * len(tmp) / len(train_statements)}% of train statements are unique")
-        #print(f"few of them: {list(tmp)[:5]}")
-        tmp = test_statements - train_statements
-        print("")
-        print(f"test - train statements: {len(tmp)} = {100 * len(tmp) / len(test_statements)}% of test statements are unique")
-        print(f"few of them: {list(tmp)[:5]}")
+            #tmp = train_statements - test_statements
+            #print("")
+            #print(f"train - test statements: {len(tmp)} = {100 * len(tmp) / len(train_statements)}% of train statements are unique")
+            #print(f"few of them: {list(tmp)[:5]}")
+            tmp = test_statements.keys() - train_statements.keys()
+            print("")
+            print(f"test - train statements: {len(tmp)} = {100 * len(tmp) / len(test_statements)}% of test statements are unique")
+            print(f"few of them: {list(tmp)[:5]}")
+            s = size_of(test_statements, tmp)
+            print(f"which represents {s} / {len(test_lines)} = {100 * s / len(test_lines)}% of test examples")
 
         #tmp = train_first_names - test_first_names
         #print("")
         #print(f"train - test entities: {len(tmp)} = {100 * len(tmp) / len(train_first_names)}% of train entities are unique")
         #print(f"few of them: {list(tmp)[:5]}")
-        tmp = test_first_names - train_first_names
+        tmp = test_first_names.keys() - train_first_names.keys()
         print("")
         print(f"test - train entities: {len(tmp)} = {100 * len(tmp) / len(test_first_names)}% of test entities are unique")
         print(f"few of them: {list(tmp)[:5]}")
+        s = size_of(test_first_names, tmp)
+        print(f"which represents {s} / {len(test_lines)} = {100 * s / len(test_lines)}% of test examples")
 
         #tmp = train_relations - test_relations
         #print("")
         #print(f"train - test relations: {len(tmp)} = {100 * len(tmp) / len(train_relations)}% of train relations are unique")
         #print(f"few of them: {list(tmp)[:5]}")
-        tmp = test_relations - train_relations
+        tmp = test_relations.keys() - train_relations.keys()
         print("")
         print(f"test - train relations: {len(tmp)} = {100 * len(tmp) / len(test_relations)}% of test relations are unique")
         print(f"few of them: {list(tmp)[:5]}")
+        s = size_of(test_relations, tmp)
+        print(f"which represents {s} / {len(test_lines)} = {100 * s / len(test_lines)}% of test examples")
 
         print("")
 
