@@ -41,10 +41,23 @@ def extract_first_names(lines):
         for sent in story.strip().split('.'):
             sent = sent.strip()
             if len(sent) == 0: continue
+            #################
+            ### OPTION 1 ####
+            #######################################################
             # lowercase the first char
             sent = sent[0].lower() + sent[1:]
             # all other upper case words are considered first names
             fns.update([w for w in sent.split() if w[0].isupper()])
+            #######################################################
+            ### OPTION 2 #
+            #######################################################
+            #try:
+            #    rel, e1, e2 = extract_entities_and_relation(sent)
+            #    fns.update([e1, e2])
+            #except IndexError as e:
+            #    print(f"INDEX ERROR ON THIS LINE: '{sent}'")
+            #    raise e
+            #######################################################
     return fns
 
 
@@ -291,7 +304,7 @@ def get_data(lines, source='proof'):
             raw_info = line.split('<STORY>')[1].split('<QUERY>')[0]
             proof_str = ["none"]  # assume no proof if source = story
         else:
-            raise ValueError(f"Invalid parameter {source}.")
+            raise ValueError(f"Invalid parameter source={source}.")
 
         for sent in raw_info.split('.'):
             if len(sent.strip()) == 0: continue
@@ -321,6 +334,8 @@ def get_data(lines, source='proof'):
                     conclusion = f"{e32}-{rel3}-{e31}"
                     custom_add(statements, conclusion, idx)
                 else:
+                    # TODO: considering only the story will potentially skip
+                    #  new relations present only in the PROOF and ANSWER
                     e12, rel1, e11, e22, rel2, e21 = None, None, None, None, None, None
                     rel3, e31, e32 = extract_entities_and_relation(sent.strip())
                     custom_add(first_names, e31, idx)
@@ -343,8 +358,8 @@ def get_data(lines, source='proof'):
 
 
 def main3():
-    m1 = "no_proof"
-    m2 = "facts"
+    m1 = "no_proof"  # short_proof | long_proof | no_proof
+    m2 = "facts"  # facts | amt | both
 
     print(f"Loading training proofs")
     train_lines = []

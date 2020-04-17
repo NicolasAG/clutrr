@@ -21,7 +21,7 @@ l_tag = "LENGTH"
 train_files = f"/data/1.2345678910_train/{m1_tag}_1.{l_tag}_train_{m2_tag}.txt"
 test_files = f"/data/1.{l_tag}_test/{m1_tag}_1.{l_tag}_test_{m2_tag}.txt"
 
-mode1 = ["no_proof", "short_proof", "long_proof"]
+mode1 = ["no_proof", "short_proof", "long_proof", "queries"]
 mode2 = ["facts", "amt", "both"]
 train_lengths = ["2", "4", "6"]
 test_lengths = ["3", "5", "7", "8", "9", "10"]
@@ -78,7 +78,7 @@ def extract_entities_and_relation(line):
 
     # extract who is e_1 and who is e_2
     e1, e2 = None, None
-    first_names = list(set([w for w in line.split() if w[0].isupper()]))
+    first_names = list(set([w for w in line.replace("The ", "the ").split() if w[0].isupper()]))
     if len(first_names) != 2:
         print(f"line '{line}' does not have exactly 2 names: {first_names}")
         raise IndexError()
@@ -112,68 +112,45 @@ def extract_entities_and_relation(line):
     return rel, e1, e2
 
 
-def get_data(lines):
-    proofs = set([])  # set of entire proofs of the form "since <> and <> then <> . since <> and <> then <> . ..."
-    proof_steps = set([])  # set of unique proof steps of the form "since A r B and B r C then A r C ."
-    statements = set([])  # set of unique statement of the form "A r B"
+def get_fns(lines):
     first_names = set([])  # set of unique first names
-    relations = set([])  # set of unique relations
 
     for idx, line in enumerate(lines):
+        # Get the story
+        raw_info = line.split('<STORY>')[1].split('<QUERY>')[0]
 
-        # Get the proof
-        proof_raw = line.split('<PROOF>')[1].split('<ANSWER>')[0].replace('Since ', 'since ')
-        proof_str = []
-
-        for sent in proof_raw.split('.'):
+        for sent in raw_info.split('.'):
             if len(sent.strip()) == 0: continue
             try:
-                predicate1 = sent.split(' since ')[1].split(' and ')[0]
-                rel1, e11, e12 = extract_entities_and_relation(predicate1)
-                first_names.update([e11, e12])
-                relations.add(rel1)
-                predicate1 = f"{e12}-{rel1}-{e11}"
-                statements.add(predicate1)
-
-                predicate2 = sent.split(' and ')[1].split(' then ')[0]
-                rel2, e21, e22 = extract_entities_and_relation(predicate2)
-                first_names.update([e21, e22])
-                relations.add(rel2)
-                predicate2 = f"{e22}-{rel2}-{e21}"
-                statements.add(predicate2)
-
-                conclusion = sent.split(' then ')[1]
-                rel3, e31, e32 = extract_entities_and_relation(conclusion)
-                first_names.update([e31, e32])
-                relations.add(rel3)
-                conclusion = f"{e32}-{rel3}-{e31}"
-                statements.add(conclusion)
+                rel, e1, e2 = extract_entities_and_relation(sent.strip())
+                first_names.update([e1, e2])
             except IndexError as e:
                 print(f"INDEX ERROR ON THIS LINE: '{sent}'")
                 raise e
 
-            sent = f"{e12}-{rel1}-{e11} + {e22}-{rel2}-{e21} = {e32}-{rel3}-{e31}"
-            proof_steps.add(sent)
-
-            proof_str.append(sent)  # add this step to the proof
-        proof_str = '. '.join(proof_str)
-        proofs.add(proof_str)
-
-    return proof_steps, proofs, statements, first_names, relations
+    return first_names
 
 
 def get_gender(name):
-    if name in all_first_names['male']:
-        return 'male'
-    elif name in all_first_names['female']:
-        return 'female'
+    ambiguous = True
+    if name in all_first_names['male'] and name not in all_first_names['female']:
+        return 'male', not ambiguous
+    elif name in all_first_names['female'] and name not in all_first_names['male']:
+        return 'female', not ambiguous
+    elif name in all_first_names['male'] and name in all_first_names['female']:
+        if DEBUG: print(f"WARNING: Ambiguous name: {name}. Returning male.")
+        return 'male', ambiguous
     else:
-        raise ValueError(f"Unknown first name: {name}")
+        print(f"ERROR: unknown first name: {name}")
+        return None, ambiguous
 
 
-def main3():
-    m1 = "short_proof"
-    m2 = "facts"
+def main():
+    ###
+    # find name replacement with one combination (short_proof + facts) and apply it to all other combinations.
+    ###
+    m1 = "short_proof"  # short_proof | long_proof | no_proof | queries
+    m2 = "facts"  # facts | amt | both
 
     train_first_names = set([])
     print(f"Loading training stories")
@@ -182,12 +159,19 @@ def main3():
         fn = train_files.replace(m1_tag, m1).replace(m2_tag, m2).replace(l_tag, l)
         with open(fn, 'r') as f:
             train_lines = f.readlines()
-        _, _, _, first_names, _ = get_data(train_lines)
+        first_names = get_fns(train_lines)
         train_first_names.update(first_names)
     print(f"#of train first names: {len(train_first_names)}")
     # make sure all names exist
+    to_del = set([])
     for n in train_first_names:
-        assert n in all_first_names['male'] or n in all_first_names['female'], f"Unknown name from train set: {n}"
+        # assert n in all_first_names['male'] or n in all_first_names['female'], f"Unknown name from train set: {n}"
+        if n in all_first_names['male'] or n in all_first_names['female']:
+            continue
+        else:
+            print(f"Unknown name from train set: {n}")
+            to_del.add(n)
+    train_first_names = train_first_names - to_del
 
     all_test_first_names = set([])
     print(f"Loading testing stories")
@@ -196,7 +180,7 @@ def main3():
         fn = test_files.replace(m1_tag, m1).replace(m2_tag, m2).replace(l_tag, l)
         with open(fn, 'r') as f:
             test_lines = f.readlines()
-        _, _, _, test_first_names, _ = get_data(test_lines)
+        test_first_names = get_fns(test_lines)
         all_test_first_names.update(test_first_names)
     print(f"#of test first names: {len(all_test_first_names)}")
     # make sure all names exist
@@ -205,6 +189,7 @@ def main3():
 
     new_first_names = all_test_first_names - train_first_names
     print(f"#of test names not present in train names: {len(new_first_names)}")
+    assert len(new_first_names) > 0, f"No new first names! impossible to make it harder!"
     # make sure all names exist
     for n in new_first_names:
         assert n in all_first_names['male'] or n in all_first_names['female'], f"Unknown name from unique set: {n}"
@@ -212,47 +197,62 @@ def main3():
     for l in train_lengths:
         print("")
         print(f"Loading test proofs of length {l}...")
-        if DEBUG:
-            fn = f"/data/1.{l}_test/tmp.txt"
-        else:
-            fn = test_files.replace(m1_tag, m1).replace(m2_tag, m2).replace(l_tag, l)
+
+        fn = test_files.replace(m1_tag, m1).replace(m2_tag, m2).replace(l_tag, l)
         with open(fn, 'r') as f:
             test_lines = f.readlines()
-        print(f"#of test lines: {len(test_lines)}")
+        print(f"#of {m1}/{m2} lines: {len(test_lines)}")
 
-        if DEBUG:
-            fn2 = None
-            query_lines = None
-        else:
-            # also load queries line and replace those!
-            fn2 = fn.replace(m1, 'queries')
-            with open(fn2, 'r') as f:
-                query_lines = f.readlines()
-            print(f"#of query lines: {len(query_lines)}")
-            assert len(query_lines) == len(test_lines)
+        # also load other combination lines and replace those!
+        other_fns = []
+        other_lines = []
+        for om1 in mode1:
+            for om2 in mode2:
+                # if same combination than starting point, ignore
+                if om1 == m1 and om2 == m2: continue
+                # read other combination lines
+                fn2 = fn.replace(m1, om1).replace(m2, om2)
+                with open(fn2, 'r') as f:
+                    o_lines = f.readlines()
+                print(f"#of {om1}/{om2} lines: {len(o_lines)}")
+                assert len(o_lines) == len(test_lines)
+                other_fns.append(fn2)
+                other_lines.append(o_lines)
 
-        # replace names by names from new_first_names
+        # replace old names by names from new_first_names
         for idx, line in enumerate(test_lines):  # for all test line
+            if DEBUG and idx == 10: break
             if len(line.strip()) == 0: continue  # skip empty lines
 
-            # get the names in this line
-            _, _, _, test_line_fns, _ = get_data([line])
+            if DEBUG: print(f"line: '{line.strip()}'")
 
-            # find the names to replace & to keep
+            # get the names in this line
+            test_line_fns = get_fns([line])
+            if DEBUG: print(f"first names in this line: {test_line_fns}")
+
+            # find the names to keep
             names_to_keep = []
             for name in test_line_fns:
                 if name in new_first_names:
                     names_to_keep.append(name)
-                    gender = get_gender(name)
-                    assert name in all_first_names[gender], f"unknown {gender} name: {name}"
-                    all_first_names[gender][name] = True  # flag that name as being not available anymore
+                    gender, ambiguous = get_gender(name)
+                    # flag that name as being not available anymore
+                    if ambiguous:
+                        all_first_names['male'][name] = True
+                        all_first_names['female'][name] = True
+                    else:
+                        all_first_names[gender][name] = True
+            if DEBUG: print(f"names to keep: {names_to_keep}")
 
             # find the old_name --> new_name replacement
             replacement = {}
             for old_name in test_line_fns:
-                gender = get_gender(old_name)
+                gender, ambiguous = get_gender(old_name)
                 # if the old name is to be kept, keep it.
                 if old_name in names_to_keep:
+                    new_name = old_name
+                elif ambiguous:
+                    print(f"Not sure of the gender for {old_name} so can't replace it :(")
                     new_name = old_name
                 else:
                     available_names = [n for n, used in all_first_names[gender].items() if not used and n in new_first_names]
@@ -262,45 +262,60 @@ def main3():
                         if DEBUG: print(f"--keep the same name for now ({old_name}) but reset {gender} names for future use!")
                         # reset the first names for next round!
                         for n in all_first_names[gender]:
-                            all_first_names[gender][n] = False
+                            all_first_names[gender][n] = n in names_to_keep
                     else:
                         new_name = available_names[0]
                 replacement[old_name] = new_name
-                # make sure that names exist
-                assert new_name in all_first_names[gender], f"Unknown {gender} new name: {new_name}!"
-                all_first_names[gender][new_name] = True
+                # flag the new name as USED (for both genders if new name can be ambiguous!)
+                _, ambiguous = get_gender(new_name)
+                if ambiguous:
+                    all_first_names['female'][new_name] = True
+                    all_first_names['male'][new_name] = True
+                else:
+                    all_first_names[gender][new_name] = True
 
-            if DEBUG: print(f"old line: {line.strip()}")
-            # replace the names in the line
-            for old_name, new_name in replacement.items():
-                line = line.replace(' '+old_name+' ', ' '+new_name+' ')
-            test_lines[idx] = line
-            if DEBUG: print(f"new line: {line.strip()}")
-            if DEBUG: print(f"name replacement: {replacement}")
-            if DEBUG: print("")
-
-            # also replace query lines!
-            if query_lines:
-                q_line = query_lines[idx]
+            # make sure there are no duplicate names in the new line
+            if not DEBUG:
+                old_line = line.strip()
+                # replace the names in the line
                 for old_name, new_name in replacement.items():
-                    q_line = q_line.replace(' '+old_name+' ', ' '+new_name+' ')
-                query_lines[idx] = q_line
+                    line = line.replace(' '+old_name+' ', ' '+new_name+' ')
+                test_lines[idx] = line
+                try:
+                    _ = get_fns([line])
+                except IndexError as e:
+                    print(f"old line: {old_line}")
+                    print(f"new line: {line.strip()}")
+                    print(f"name replacement: {replacement}")
+                    raise e
+            if DEBUG:
+                print(f"old line: {line.strip()}")
+                # replace the names in the line
+                for old_name, new_name in replacement.items():
+                    line = line.replace(' ' + old_name + ' ', ' ' + new_name + ' ')
+                test_lines[idx] = line
+                print(f"new line: {line.strip()}")
+                print(f"name replacement: {replacement}")
+                print("")
 
-        # get all new test names
-        _, _, _, test_line_fns, _ = get_data(test_lines)
-        # make sure all names exist
-        for n in test_line_fns:
-            assert n in all_first_names['male'] or n in all_first_names['female'], f"Unknown (according to finals) name from test set: {n}"
+            # also replace other lines!
+            for o_lines in other_lines:
+                o_line = o_lines[idx]
+                for old_name, new_name in replacement.items():
+                    o_line = o_line.replace(' '+old_name+' ', ' '+new_name+' ')
+                o_lines[idx] = o_line
 
+        print(f"Saving new test proofs of length {l}...")
         # Save the new lines to file
         fn = fn.replace('.txt', '_HARD.txt')
         with open(fn, 'w') as f:
             f.writelines(test_lines)
-        # Also save the query lines!
-        if fn2 and query_lines:
+
+        # Also save the other lines!
+        for fn2, o_lines in zip(other_fns, other_lines):
             fn2 = fn2.replace('.txt', '_HARD.txt')
             with open(fn2, 'w') as f:
-                f.writelines(query_lines)
+                f.writelines(o_lines)
 
 
 def get_relation_mappings():
@@ -337,4 +352,4 @@ if __name__ == "__main__":
     all_first_names = get_all_first_names()
     print(f"got {len(all_first_names['male'])} males and {len(all_first_names['female'])} females.")
 
-    main3()
+    main()

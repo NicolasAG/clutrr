@@ -17,10 +17,17 @@ do
 done
 echo "done. now submitting job..."
 
+try=1
+
 eai job submit \
   --image registry.console.elementai.com/$ACCOUNT_ID/clutrr \
   --data $ORG_NAME.$ACCOUNT_NAME.data_clutrr1:/data \
   --data $ORG_NAME.$ACCOUNT_NAME.code_clutrr:/clutrr \
   --mem 12 \
   -- bash -c "while true; do sleep 60; done;"
+  #--name "explore_csv_noproof_facts_proper_try${try}" \
+  #-- bash -c "cd clutrr/ && python explore_csv.py"
+  #-- bash -c "cd clutrr/ && python make_test_PROPER.py"
 
+eai job exec --last -- bash
+#eai job log -f --last
